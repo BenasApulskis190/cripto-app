@@ -10,8 +10,7 @@
     "build-only": "vite build",
     "type-check": "vue-tsc --noEmit -p tsconfig.vitest.json --composite false",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
-    "format": "prettier --write src/",
-    "generate:translations": "i18next 'src/**/*.ts' 'src/**/*.tsx' 'pages/**/*.ts' 'pages/**/*.tsx' --config i18next-parser.config.cjs"
+    "format": "prettier --write src/"
   },
   "dependencies": {
     "@popperjs/core": "^2.11.8",

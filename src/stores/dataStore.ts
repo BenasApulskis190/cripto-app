@@ -1,108 +1,109 @@
-import { defineStore } from 'pinia'
-import { AxiosError } from 'axios'
-import type { AxiosResponse } from 'axios'
-import apiClient from '../api/apiClient'
+import { defineStore } from 'pinia';
+import type { AxiosResponse } from 'axios';
+import apiClient from '../api/apiClient';
 import type {
   Cryptocurrency,
   CryptocurrencyInfo,
   CryptocurrencyList,
-  cryptocurrencyInfoList
-} from '../types'
+  cryptocurrencyInfoList,
+} from '../types';
+import { joinArraysById } from '@/util/joinArrayItemsById';
 
 export const useCryptoStore = defineStore('crypto', {
   state: () => ({
     cryptocurrencies: [] as Cryptocurrency[],
     cryptocurrencyInfoList: [] as cryptocurrencyInfoList[],
     totalCryptocurrencies: 0,
+    start: 1,
     loading: false,
-    error: null,
-    cryptocurrencyIds: [] as number[]
+    error: [] as unknown[],
+    postLoading: false,
+    cryptocurrencyIds: [],
   }),
   actions: {
-    setError(error: any) {
-      this.error = error
+    pushErrors(error: unknown) {
+      this.error.push(error);
     },
 
-    storeIds(ids: number[]) {
-      this.cryptocurrencyIds = ids
+    clearError() {
+      this.error = [];
     },
 
-    async fetchCryptocurrencies(
+    async fetchCryptocurrenciesList(
       options: {
-        start?: number
-        limit?: number
-        price_min?: number
-        price_max?: number
-        market_cap_min?: number
-        market_cap_max?: number
-        volume_24h_min?: number
-        volume_24h_max?: number
-        circulating_supply_min?: number
-        circulating_supply_max?: number
-        percent_change_24h_min?: number
-        percent_change_24h_max?: number
-        convert?: string
-        sort?: string
-        sort_dir?: string
-        cryptocurrency_type?: string
-        tag?: string
-        aux?: string
-      } = {}
-    ): Promise<void> {
-      this.loading = true
-
+        start?: number;
+        limit?: number;
+      } = {},
+    ): Promise<number[] | void> {
       try {
-        const defaultParams = { start: 1, limit: 20 }
+        const defaultParams = { start: this.start, limit: 20 };
         const response: AxiosResponse<CryptocurrencyList> = await apiClient.get(
           'v1/cryptocurrency/listings/latest',
           {
-            params: { ...defaultParams, ...options }
-          }
-        )
-        this.cryptocurrencies = [...this.cryptocurrencies, ...response.data.data]
-        const ids = response.data.data.map((cryptocurrency) => cryptocurrency.id)
-        this.storeIds(ids)
-        this.totalCryptocurrencies = response.data.status.total_count
-        this.setError(null)
+            params: { ...defaultParams, ...options },
+          },
+        );
+        this.totalCryptocurrencies = response.data.status.total_count;
+        this.cryptocurrencies = response.data.data;
+        return response.data.data.map((cryptocurrency) => cryptocurrency.id);
       } catch (error) {
-        if (error instanceof AxiosError) {
-          this.setError(error)
+        if (error) {
+          this.pushErrors(error);
         } else {
-          throw new Error('Unknown error')
+          throw new Error(`Unknown error ${error}`);
         }
-      } finally {
-        this.loading = false
       }
     },
 
     async fetchCryptocurrencyInfo(ids: string): Promise<void> {
-      this.loading = true
-
       try {
         const response: AxiosResponse<CryptocurrencyInfo> = await apiClient.get(
           '/v1/cryptocurrency/info',
           {
-            params: { id: ids }
-          }
-        )
-        this.cryptocurrencyInfoList = Object.values(response.data.data).map((item) => ({
-          id: item,
+            params: { id: ids },
+          },
+        );
+
+        const data = Object.values(response.data.data).map((item) => ({
+          id: item.id,
           name: item.name,
           symbol: item.symbol,
           category: item.category,
-          logo: item.logo
-        }))
+          logo: item.logo,
+        }));
+        const result = joinArraysById(this.cryptocurrencies, data);
 
-        this.setError(null)
+        this.cryptocurrencyInfoList.push(...(result as cryptocurrencyInfoList[]));
+        this.clearError();
       } catch (error) {
-        if (error instanceof AxiosError) {
-          this.setError(error)
+        if (error) {
+          this.pushErrors(error);
         } else {
-          throw new Error('Unknown error')
+          throw new Error(`unknown ${error}`);
+        }
+      }
+    },
+
+    async fetchCryptocurrency(): Promise<void> {
+      this.postLoading = true;
+      try {
+        const ids = await this.fetchCryptocurrenciesList();
+        if (ids && ids.length) {
+          await this.fetchCryptocurrencyInfo(ids.join(','));
+        }
+      } catch (error) {
+        if (error) {
+          this.pushErrors(error);
+        } else {
+          throw new Error(`Unknown error ${error}`);
         }
       } finally {
-        this.loading = false
+        this.postLoading = false;
       }
-    }
-  }
-})
+    },
+
+    addStart() {
+      this.start = this.start + 20;
+    },
+  },
+});

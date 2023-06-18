@@ -1,10 +1,7 @@
 <template>
-  <main>
-    <h1>Home page</h1>
-    <CryptoList />
-  </main>
+  <CryptoList />
 </template>
 
 <script setup lang="ts">
-import CryptoList from '@/components/CryptoList.vue'
+import CryptoList from '@/components/CryptoList.vue';
 </script>

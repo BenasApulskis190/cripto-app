@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import IconBrand from './icons/IconBrand.vue'
+import IconBrand from './icons/IconBrand.vue';
 </script>
 
 <template>
@@ -9,13 +9,19 @@ import IconBrand from './icons/IconBrand.vue'
         <div class="container-fluid">
           <router-link to="/" class="navbar-brand d-flex align-items-center">
             <IconBrand />
-            <span class="ps-2">Bootstrap</span>
+            <span class="ps-2">Crypto App</span>
           </router-link>
         </div>
       </nav>
     </header>
-    <main>
+    <main class="main">
       <slot></slot>
     </main>
   </div>
 </template>
+
+<style>
+.main {
+  margin-top: 57px;
+}
+</style>

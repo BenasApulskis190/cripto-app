@@ -1,0 +1,9 @@
+$primary: #f7931a;
+
+body,
+html {
+  height: 100vh;
+  overflow: hidden;
+}
+
+@import '../../../node_modules/bootstrap/scss/bootstrap';
